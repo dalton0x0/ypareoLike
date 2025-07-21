@@ -23,8 +23,7 @@ class User extends Authenticatable
         'lastName',
         'username',
         'email',
-        'password',
-        'role_id'
+        'password'
     ];
 
     /**
@@ -57,6 +56,8 @@ class User extends Authenticatable
 
     public function trainings(): BelongsToMany
     {
-        return $this->belongsToMany(Training::class);
+        return $this->belongsToMany(Training::class)
+            ->withPivot('school_year_id')
+            ->withTimestamps();
     }
 }

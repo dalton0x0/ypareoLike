@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\SchoolYear;
 use App\Models\Training;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
@@ -16,8 +17,8 @@ return new class extends Migration
         Schema::create('training_user', function (Blueprint $table) {
             $table->foreignIdFor(Training::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
-            $table->primary(['training_id', 'user_id']);
-            $table->date('date');
+            $table->foreignIdFor(SchoolYear::class)->constrained()->cascadeOnDelete();
+            $table->primary(['training_id', 'user_id', 'school_year_id']);
             $table->timestamps();
         });
     }

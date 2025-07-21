@@ -18,7 +18,9 @@ class Training extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class)
+            ->withPivot('school_year_id')
+            ->withTimestamps();
     }
 
     public function lessons(): BelongsToMany
