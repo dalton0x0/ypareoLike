@@ -21,16 +21,16 @@ class TrainingSeeder extends Seeder
             ['title' => 'Bachelor Concepteur Développeur d\'Application', 'level' => 3],
         ]);
 
-        $students = User::whereHas('roles', function ($query) {
-            $query->where('name', 'student');
+        $users = User::whereHas('roles', function ($query) {
+            $query->where('name', 'student')->orWhere('name', 'teacher');
         })->get();
 
         $schoolYearIds = [1, 2];
 
-        foreach ($students as $student) {
+        foreach ($users as $user) {
             $selectedTraining = $trainings->random(rand(1, 2));
             foreach ($selectedTraining as $training) {
-                $student->trainings()->attach($training->id, [
+                $user->trainings()->attach($training->id, [
                     'school_year_id' => $schoolYearIds[array_rand($schoolYearIds)],
                 ]);
             }

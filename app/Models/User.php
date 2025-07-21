@@ -60,4 +60,11 @@ class User extends Authenticatable
             ->withPivot('school_year_id')
             ->withTimestamps();
     }
+
+    public function schoolYears() : BelongsToMany
+    {
+        return $this->belongsToMany(SchoolYear::class, 'training_user')
+            ->withPivot('training_id')
+            ->withTimestamps();
+    }
 }
