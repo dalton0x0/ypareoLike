@@ -17,7 +17,8 @@ class TrainingFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'title' => fake()->title(),
+            'level' => $this->faker->numberBetween(1, 2)
         ];
     }
 }
