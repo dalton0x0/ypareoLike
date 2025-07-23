@@ -39,6 +39,6 @@ class ScheduleController extends Controller
                 ->get();
         }
 
-        return view('schedule.index', (['schedules', 'trainings']));
+        return view('schedule.index', compact('schedules', 'trainings'));
     }
 }
