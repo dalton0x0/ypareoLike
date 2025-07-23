@@ -1,6 +1,5 @@
 # Application de Gestion Scolaire - Laravel
 
----
 Cette application permet aux administrateurs de gérer :
 
 - Les utilisateurs (étudiants, enseignants, etc.)
@@ -10,14 +9,13 @@ Cette application permet aux administrateurs de gérer :
 - Les années scolaires
 - Les plannings hebdomadaires de cours
 
----
 ## Prérequis
 - [Node.js](https://nodejs.org/) installé
 - [Composer](https://getcomposer.org/) installé
 - [Laravel](https://laravel.com/docs/12.x/) installé
 - [PHP](https://www.php.net/downloads.php/) installé
 
----
+
 ## Étapes d'installation
 
 ### Cloner le projet
@@ -84,5 +82,4 @@ ou avec Herd tapez
 http://ypareoLike.test
 ```
 
----
 Le projet Laravel est maintenant accessible avec toutes les dépendances installées et une base de données peuplées!
