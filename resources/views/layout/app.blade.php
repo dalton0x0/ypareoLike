@@ -12,42 +12,9 @@
 </head>
 <body class="d-flex flex-column h-100 bg-light">
 
-<main class="container flex-column justify-content-center align-items-center mt-3">
+<main class="container-fluid flex-column justify-content-center align-items-center mt-3">
     <h1 class="text-center mb-4">Ypareo Like</h1>
     @yield('content')
-    <section>
-        <h1 class="text-center mb-4">All users</h1>
-        <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Full name</th>
-                <th scope="col">Status</th>
-                <th scope="col">Formation</th>
-                <th scope="col">School year</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach($users as $user)
-                <tr>
-                    <th scope="row">{{ $user->id }}</th>
-                    <td>{{ $user->firstName }} {{ $user->lastName }}</td>
-                    <td>
-                        {{ $user->roles->pluck('name')->implode(', ') }}
-                    </td>
-                    <td>
-                        {{ $user->trainings->pluck('title')->implode(', ') }}
-                    </td>
-                    <td>
-                        @if($user->roles->contains('name', 'student'))
-                            {{ $user->schoolYears->pluck('label')->implode(', ') }}
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
-    </section>
 </main>
 
 <script src="{{ mix('js/app.js') }}"></script>

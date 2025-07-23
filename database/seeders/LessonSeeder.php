@@ -14,15 +14,10 @@ class LessonSeeder extends Seeder
      */
     public function run(): void
     {
-        $lessons = Lesson::factory()->createMany([
+        Lesson::factory()->createMany([
             ['label' => "Conception d'une infrastructure sécurisée"],
             ['label' => "Sécuriser une application"],
             ['label' => "Maquetter une application"]
         ]);
-        $trainings = Training::all();
-
-        foreach ($trainings as $training) {
-            $training->lessons()->attach($lessons->random(rand(1, 3))->pluck('id')->toArray());
-        }
     }
 }

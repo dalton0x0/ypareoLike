@@ -25,6 +25,8 @@ class Training extends Model
 
     public function lessons(): BelongsToMany
     {
-        return $this->belongsToMany(Lesson::class);
+        return $this->belongsToMany(Lesson::class)
+            ->using(LessonTraining::class)
+            ->withPivot(['user_id', 'start_time', 'end_time', 'room']);
     }
 }
