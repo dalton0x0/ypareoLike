@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             TrainingSeeder::class,
             LessonSeeder::class,
             TrainingUserSeeder::class,
-            LessonTrainingSeeder::class,
+            ScheduleSeeder::class,
         ]);
     }
 }

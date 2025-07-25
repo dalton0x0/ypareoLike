@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class LessonTraining extends Model
+class Schedule extends Model
 {
     /** @use HasFactory<\Database\Factories\RoleFactory> */
     use HasFactory;
@@ -15,14 +15,22 @@ class LessonTraining extends Model
         'lesson_id',
         'training_id',
         'user_id',
-        'start_time',
-        'end_time',
+        'day_of_week',
+        'start_hour',
+        'end_hour',
         'room'
     ];
 
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+    const DAYS = [
+        1 => 'Lundi',
+        2 => 'Mardi',
+        3 => 'Mercredi',
+        4 => 'Jeudi',
+        5 => 'Vendredi',
+    ];
+
+    const HOURS = [
+        '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
     ];
 
     public function lesson(): BelongsTo
@@ -38,5 +46,10 @@ class LessonTraining extends Model
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function getDayNameAttribute(): string
+    {
+        return self::DAYS[$this->day_of_week] ?? '';
     }
 }

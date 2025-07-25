@@ -26,7 +26,6 @@ class TrainingUserSeeder extends Seeder
             $studentTrainings = $trainings->random(rand(1, 2));
 
             foreach ($studentTrainings as $training) {
-                // Vérifier si l'association existe déjà avant d'insérer
                 $exists = DB::table('training_user')
                     ->where('user_id', $student->id)
                     ->where('training_id', $training->id)

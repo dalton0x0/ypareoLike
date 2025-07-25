@@ -1,1 +1,14 @@
+.schedule-item {
+    border-left: 4px solid #4e73df;
+    transition: all 0.3s;
+}
 
+.schedule-item:hover {
+    background-color: #f8f9fa !important;
+    transform: translateY(-2px);
+}
+
+.table th, .table td {
+    vertical-align: middle;
+    min-width: 150px;
+}
