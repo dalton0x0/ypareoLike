@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME}
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: my-phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql-db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - backend
+
+  spring-api:
+    build: .
+    container_name: spring-api
+    environment:
+      SPRING_APPLICATION_NAME: ${SPRING_APPLICATION_NAME}
+      SPRING_DATASOURCE_URL: ${MYSQL_DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+      SPRING_JPA_DATABASE_PLATFORM: ${SPRING_JPA_DATABASE_PLATFORM}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+
+networks:
+  backend:
+volumes:
+  mysql_data:
