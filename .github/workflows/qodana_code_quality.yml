@@ -1,21 +1,16 @@
 name: Qodana Code Quality Analysis
 
 on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline YpareoLike"]
+    types:
+      - completed
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-      - develop
-      - 'releases/*'
-  push:
-    branches:
-      - main
-      - develop
-      - 'releases/*'
 
 jobs:
   qodana-scan:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: write
       pull-requests: write
@@ -23,16 +18,16 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout code from the successful build
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - name: Qodana Scan
         uses: JetBrains/qodana-action@v2025.2
         with:
-          pr-mode: ${{ github.event_name == 'pull_request' }}
+          pr-mode: ${{ github.event.workflow_run.event == 'pull_request' }}
           upload-result: true
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_129550057 }}
