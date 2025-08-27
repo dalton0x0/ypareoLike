@@ -11,6 +11,7 @@ on:
       - main
       - develop
       - 'releases/*'
+    types: [opened, synchronize, reopened]
 
 jobs:
   code-quality:
@@ -40,11 +41,55 @@ jobs:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_129550057 }}
           QODANA_ENDPOINT: 'https://qodana.cloud'
 
-  test-and-build:
-    name: Build & Test (Maven)
+  sonarqube-analysis:
+    name: SonarQube Analysis
     runs-on: ubuntu-latest
     needs: code-quality
     if: needs.code-quality.outputs.quality-passed == 'true'
+    outputs:
+      sonar-passed: ${{ steps.sonar.outcome == 'success' }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build and analyze with SonarQube
+        id: sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn -B compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=dalton0x0_ypareoLike \
+            -Dsonar.skipTests=true
+
+  test-and-build:
+    name: Build & Test (Maven)
+    runs-on: ubuntu-latest
+    needs: sonarqube-analysis
+    if: needs.sonarqube-analysis.outputs.sonar-passed == 'true'
     outputs:
       build-success: ${{ steps.build.outcome == 'success' }}
 
