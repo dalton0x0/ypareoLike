@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <sonar.organization>dalton0x0</sonar.organization>
     </properties>
     <dependencies>
         <dependency>
