@@ -80,7 +80,10 @@ jobs:
         id: sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=dalton0x0_ypareoLike
+        run: |
+          mvn -B compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=dalton0x0_ypareoLike \
+            -Dsonar.skipTests=true
 
   test-and-build:
     name: Build & Test (Maven)
