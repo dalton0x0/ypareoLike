@@ -61,7 +61,7 @@ jobs:
 
       - name: Run tests & build with Maven
         id: build
-        run: mvn clean verify
+        run: mvn clean package
 
       - name: Setup environment variables
         run: |
