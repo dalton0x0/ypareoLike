@@ -1,6 +1,5 @@
 package com.ypareo.like.web;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ypareo.like.dtos.RoleRequestDto;
 import com.ypareo.like.dtos.RoleResponseDto;
 import com.ypareo.like.enums.RoleType;
@@ -21,15 +20,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class RoleControllerTest {
+class RoleControllerTest {
 
     @Mock
     private RoleService roleService;
 
     @InjectMocks
     private RoleController roleController;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void testGetRoles_WithContent() {
