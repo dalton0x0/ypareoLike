@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -18,4 +19,5 @@ public class ApiError {
     private String message;
     private String path;
     private LocalDateTime timestamp;
+    private List<ApiSubError> subErrors;
 }
