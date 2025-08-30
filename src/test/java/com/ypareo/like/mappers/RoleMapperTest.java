@@ -12,7 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-public class RoleMapperTest {
+class RoleMapperTest {
 
     @InjectMocks
     private RoleMapper roleMapper;
