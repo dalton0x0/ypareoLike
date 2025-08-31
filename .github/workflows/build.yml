@@ -106,7 +106,7 @@ jobs:
 
       - name: Run tests & build with Maven
         id: build
-        run: mvn clean package -DskipTests
+        run: mvn clean verify
 
       - name: Setup environment variables
         run: |
