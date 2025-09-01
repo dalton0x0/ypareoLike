@@ -3,6 +3,8 @@ package com.ypareo.like.services.implementations;
 import com.ypareo.like.dtos.RoleRequestDto;
 import com.ypareo.like.dtos.RoleResponseDto;
 import com.ypareo.like.enums.RoleType;
+import com.ypareo.like.exceptions.BadRequestException;
+import com.ypareo.like.exceptions.ResourceNotFoundException;
 import com.ypareo.like.mappers.RoleMapper;
 import com.ypareo.like.models.sql.Role;
 import com.ypareo.like.repositories.RoleRepository;
@@ -82,9 +84,7 @@ class RoleServiceImplTest {
         Long roleId = 999L;
         when(roleRepository.findById(roleId)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            roleService.getRoleById(roleId);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> roleService.getRoleById(roleId));
 
         assertEquals("Role with id 999 not found", exception.getMessage());
         verify(roleRepository, times(1)).findById(roleId);
@@ -105,9 +105,7 @@ class RoleServiceImplTest {
         when(roleRepository.save(roleToSave)).thenReturn(savedRole);
         when(roleMapper.convertEntityToDto(savedRole)).thenReturn(responseDto);
 
-
         RoleResponseDto result = roleService.createRole(requestDto);
-
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -125,12 +123,12 @@ class RoleServiceImplTest {
         Role existingRole = Role.builder().id(roleId).name(RoleType.TEACHER).build();
 
         when(roleRepository.findById(roleId)).thenReturn(Optional.of(existingRole));
-        doNothing().when(roleRepository).delete(existingRole);
+        doNothing().when(roleRepository).deleteById(roleId);
 
         roleService.deleteRole(roleId);
 
         verify(roleRepository, times(1)).findById(roleId);
-        verify(roleRepository, times(1)).delete(existingRole);
+        verify(roleRepository, times(1)).deleteById(roleId);
     }
 
     @Test
@@ -139,12 +137,45 @@ class RoleServiceImplTest {
         Long roleId = 999L;
         when(roleRepository.findById(roleId)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            roleService.deleteRole(roleId);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> roleService.deleteRole(roleId));
 
         assertEquals("Role with id 999 not found", exception.getMessage());
         verify(roleRepository, times(1)).findById(roleId);
         verify(roleRepository, never()).delete(any());
+    }
+
+    @Test
+    void testValidateRoleRequestDto () {
+
+        RoleRequestDto requestDto = RoleRequestDto.builder().build();
+
+        assertNull(requestDto.getName());
+
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> roleService.createRole(requestDto));
+
+        assertEquals("Role name cannot be null", exception.getMessage());
+        verify(roleMapper, never()).convertDtoToEntity(any(RoleRequestDto.class));
+        verify(roleRepository, never()).save(any(Role.class));
+        verify(roleMapper, never()).convertEntityToDto(any(Role.class));
+    }
+
+    @Test
+    void testCheckUniqueConstraints () {
+
+        RoleRequestDto requestDto = RoleRequestDto.builder()
+                .name(RoleType.ADMIN)
+                .build();
+
+        Role existingRole = Role.builder().name(RoleType.ADMIN).build();
+
+        when(roleRepository.findByName(RoleType.ADMIN)).thenReturn(Optional.of(existingRole));
+
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> roleService.createRole(requestDto));
+
+        assertEquals("Role " + RoleType.ADMIN + " already exists", exception.getMessage());
+        verify(roleRepository, times(1)).findByName(RoleType.ADMIN);
+        verify(roleMapper, never()).convertDtoToEntity(any(RoleRequestDto.class));
+        verify(roleRepository, never()).save(any(Role.class));
+        verify(roleMapper, never()).convertEntityToDto(any(Role.class));
     }
 }
