@@ -118,7 +118,7 @@ class RoleControllerTest {
         ResponseEntity<Void> response = roleController.deleteRole(roleId);
 
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
         verify(roleService, times(1)).deleteRole(roleId);
     }
