@@ -10,6 +10,7 @@ class YpareoLikeApplicationTests {
 
     @Test
     void contextLoads() {
+        // Test context loads
     }
 
 }

@@ -1,6 +1,5 @@
 package com.ypareo.like.models.sql;
 
-import com.ypareo.like.enums.RoleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,11 +11,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Role {
+public class User {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
+
     @Column(unique = true, nullable = false)
-    private RoleType name;
+    private String email;
+
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    private String password;
 }
