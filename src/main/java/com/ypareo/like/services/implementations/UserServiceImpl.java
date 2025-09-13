@@ -36,8 +36,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponseDto createUser(UserRequestDto userRequestDto) {
         validateUserRequestDto(userRequestDto);
-        checkEmailExists(userRequestDto);
-        checkUsernameExists(userRequestDto);
+        checkIfEmailExists(userRequestDto);
+        checkIfUsernameExists(userRequestDto);
         checkPassword(userRequestDto);
         User newUser = userMapper.convertDtoToEntity(userRequestDto);
         User savedUser = userRepository.save(newUser);
@@ -83,13 +83,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void checkEmailExists(UserRequestDto userRequestDto) {
+    private void checkIfEmailExists(UserRequestDto userRequestDto) {
         if (userRepository.existsByEmail(userRequestDto.getEmail())) {
             throw new BadRequestException("Email " + userRequestDto.getEmail() + " already exists");
         }
     }
 
-    private void checkUsernameExists(UserRequestDto userRequestDto) {
+    private void checkIfUsernameExists(UserRequestDto userRequestDto) {
         if (userRepository.existsByUsername(userRequestDto.getUsername())) {
             throw new BadRequestException("Username " + userRequestDto.getUsername() + " already exists");
         }
@@ -103,16 +103,16 @@ public class UserServiceImpl implements UserService {
 
     private void checkIfEmailHasChanged(Long userId, UserRequestDto userRequestDto) {
         User existingUser = getExistingUser(userId);
-        if (userRequestDto.getEmail() != null && !existingUser.getEmail().equals(userRequestDto.getEmail())) {
-            checkEmailExists(userRequestDto);
+        if (userRequestDto.getEmail() != null && !existingUser.getEmail().equalsIgnoreCase(userRequestDto.getEmail())) {
+            checkIfEmailExists(userRequestDto);
             existingUser.setEmail(userRequestDto.getEmail());
         }
     }
 
     private void checkIfUsernameHasChanged(Long userId, UserRequestDto userRequestDto) {
         User existingUser = getExistingUser(userId);
-        if (!userRequestDto.getUsername().trim().isEmpty() && !existingUser.getUsername().equals(userRequestDto.getUsername())) {
-            checkUsernameExists(userRequestDto);
+        if (!userRequestDto.getUsername().trim().isEmpty() && !existingUser.getUsername().equalsIgnoreCase(userRequestDto.getUsername())) {
+            checkIfUsernameExists(userRequestDto);
             existingUser.setUsername(userRequestDto.getUsername());
         }
     }
