@@ -129,10 +129,53 @@ class UserServiceImplTest {
     }
 
     @Test
+    void createUser_WithMissingLastName_ShouldThrowException() {
+
+        UserRequestDto requestDto = UserRequestDto.builder()
+                .firstName("John")
+                .email("john@email.com")
+                .username("johndoe")
+                .password("password123")
+                .build();
+
+        assertNull(requestDto.getLastName());
+        assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+    }
+
+    @Test
+    void createUser_WithMissingEmail_ShouldThrowException() {
+
+        UserRequestDto requestDto = UserRequestDto.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("johndoe")
+                .password("password123")
+                .build();
+
+        assertNull(requestDto.getEmail());
+        assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+    }
+
+    @Test
+    void createUser_WithMissingUsername_ShouldThrowException() {
+
+        UserRequestDto requestDto = UserRequestDto.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@email.com")
+                .password("password123")
+                .build();
+
+        assertNull(requestDto.getUsername());
+        assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+    }
+
+    @Test
     void createUser_WithMissingPassword_ShouldThrowException() {
 
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
+
                 .lastName("Doe")
                 .email("john@email.com")
                 .username("johndoe")
@@ -156,6 +199,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
 
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, times(1)).existsByEmail("existing@email.com");
     }
 
     @Test
