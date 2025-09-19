@@ -84,15 +84,23 @@ public class UserServiceImpl implements UserService {
     }
 
     private void checkIfEmailExists(UserRequestDto userRequestDto) {
-        if (userRepository.existsByEmail(userRequestDto.getEmail())) {
+        if (emailExists(userRequestDto.getEmail())) {
             throw new BadRequestException("Email " + userRequestDto.getEmail() + " already exists");
         }
     }
 
     private void checkIfUsernameExists(UserRequestDto userRequestDto) {
-        if (userRepository.existsByUsername(userRequestDto.getUsername())) {
+        if (usernameExists(userRequestDto.getUsername())) {
             throw new BadRequestException("Username " + userRequestDto.getUsername() + " already exists");
         }
+    }
+
+    private boolean emailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    private boolean usernameExists(String username) {
+        return userRepository.existsByUsername(username);
     }
 
     private void checkPassword(UserRequestDto userRequestDto) {
@@ -121,10 +129,8 @@ public class UserServiceImpl implements UserService {
         User existingUser = getExistingUser(userId);
         String oldPassword = existingUser.getPassword();
 
-        if (userRequestDto.getPassword() != null && !oldPassword.equals(userRequestDto.getPassword())) {
-            if (!userRequestDto.getPassword().trim().isEmpty()) {
-                existingUser.setPassword(userRequestDto.getPassword());
-            }
+        if (userRequestDto.getPassword() != null && !oldPassword.equals(userRequestDto.getPassword()) && !userRequestDto.getPassword().trim().isEmpty()) {
+            existingUser.setPassword(userRequestDto.getPassword());
         }
         if (userRequestDto.getPassword() == null || oldPassword.equals(userRequestDto.getPassword()) || userRequestDto.getPassword().trim().isEmpty()) {
             existingUser.setPassword(oldPassword);
