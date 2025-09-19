@@ -85,13 +85,13 @@ public class UserServiceImpl implements UserService {
 
     private void checkIfEmailExists(UserRequestDto userRequestDto) {
         if (emailExists(userRequestDto.getEmail())) {
-            throw new BadRequestException("Email " + userRequestDto.getEmail() + " already exists");
+            throw new BadRequestException("Email " + userRequestDto.getEmail() + " is not available");
         }
     }
 
     private void checkIfUsernameExists(UserRequestDto userRequestDto) {
         if (usernameExists(userRequestDto.getUsername())) {
-            throw new BadRequestException("Username " + userRequestDto.getUsername() + " already exists");
+            throw new BadRequestException("Username " + userRequestDto.getUsername() + " is not available");
         }
     }
 
