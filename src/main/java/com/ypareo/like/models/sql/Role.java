@@ -24,5 +24,6 @@ public class Role {
     private RoleType name;
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<User> users = new ArrayList<>();
 }
