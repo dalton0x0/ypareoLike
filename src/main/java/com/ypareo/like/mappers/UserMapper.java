@@ -3,10 +3,14 @@ package com.ypareo.like.mappers;
 import com.ypareo.like.dtos.UserRequestDto;
 import com.ypareo.like.dtos.UserResponseDto;
 import com.ypareo.like.models.sql.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class UserMapper {
+
+    private final RoleMapper roleMapper;
 
     public User convertDtoToEntity(UserRequestDto userRequestDto) {
         return User.builder()
@@ -25,6 +29,9 @@ public class UserMapper {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
+                .roles(user.getRoles().stream()
+                        .map(roleMapper::convertEntityToDto)
+                        .toList())
                 .build();
     }
 
