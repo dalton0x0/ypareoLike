@@ -5,7 +5,9 @@ import com.ypareo.like.dtos.UserResponseDto;
 import com.ypareo.like.exceptions.BadRequestException;
 import com.ypareo.like.exceptions.ResourceNotFoundException;
 import com.ypareo.like.mappers.UserMapper;
+import com.ypareo.like.models.sql.Role;
 import com.ypareo.like.models.sql.User;
+import com.ypareo.like.repositories.RoleRepository;
 import com.ypareo.like.repositories.UserRepository;
 import com.ypareo.like.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final RoleRepository roleRepository;
 
     @Override
     public List<UserResponseDto> getAllUsers() {
@@ -40,6 +43,10 @@ public class UserServiceImpl implements UserService {
         checkIfUsernameExists(userRequestDto);
         checkPassword(userRequestDto);
         User newUser = userMapper.convertDtoToEntity(userRequestDto);
+        if (userRequestDto.getRoleIds() != null && !userRequestDto.getRoleIds().isEmpty()) {
+            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
+            newUser.setRoles(roles);
+        }
         User savedUser = userRepository.save(newUser);
         return userMapper.convertEntityToDto(savedUser);
     }
@@ -52,6 +59,10 @@ public class UserServiceImpl implements UserService {
         checkIfUsernameHasChanged(id, userRequestDto);
         checkIfPasswordHasChanged(id, userRequestDto);
         userMapper.updateEntityFromDto(existingUser, userRequestDto);
+        if (userRequestDto.getRoleIds() != null) {
+            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
+            existingUser.setRoles(roles);
+        }
         User savedUser = userRepository.save(existingUser);
         return userMapper.convertEntityToDto(savedUser);
     }
@@ -62,9 +73,37 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(existingUser);
     }
 
+    @Override
+    public UserResponseDto addRoleToUser(Long userId, Long roleId) {
+        User user = getExistingUser(userId);
+        Role role = getExistingRole(roleId);
+        if (!user.getRoles().contains(role)) {
+            user.getRoles().add(role);
+            userRepository.save(user);
+        }
+        return userMapper.convertEntityToDto(user);
+    }
+
+    @Override
+    public UserResponseDto removeRoleFromUser(Long userId, Long roleId) {
+        User user = getExistingUser(userId);
+        Role role = getExistingRole(roleId);
+        if (user.getRoles().contains(role)) {
+            user.getRoles().remove(role);
+            userRepository.save(user);
+        }
+        return userMapper.convertEntityToDto(user);
+    }
+
     private User getExistingUser(Long id) {
         return userRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("User with id " + id + " not found")
+                () -> new ResourceNotFoundException("User " + id + " not found")
+        );
+    }
+
+    private Role getExistingRole(Long roleId) {
+        return roleRepository.findById(roleId).orElseThrow(
+                () -> new ResourceNotFoundException("Role " + roleId + " not found")
         );
     }
 
