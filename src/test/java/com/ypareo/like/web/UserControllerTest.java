@@ -137,4 +137,48 @@ class UserControllerTest {
         assertNull(response.getBody());
         verify(userService, times(1)).deleteUser(userId);
     }
+
+    @Test
+    void addRoleToUser_ShouldReturnUserWithAddedRole() {
+        Long userId = 1L;
+        Long roleId = 2L;
+
+        UserResponseDto expectedResponse = UserResponseDto.builder()
+                .id(userId)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@email.com")
+                .build();
+
+        when(userService.addRoleToUser(userId, roleId)).thenReturn(expectedResponse);
+
+        ResponseEntity<UserResponseDto> response = userController.addRoleToUser(userId, roleId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(userId, response.getBody().getId());
+        verify(userService, times(1)).addRoleToUser(userId, roleId);
+    }
+
+    @Test
+    void removeRoleFromUser_ShouldReturnUserWithRemovedRole() {
+        Long userId = 1L;
+        Long roleId = 2L;
+
+        UserResponseDto expectedResponse = UserResponseDto.builder()
+                .id(userId)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@email.com")
+                .build();
+
+        when(userService.removeRoleFromUser(userId, roleId)).thenReturn(expectedResponse);
+
+        ResponseEntity<UserResponseDto> response = userController.removeRoleFromUser(userId, roleId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(userId, response.getBody().getId());
+        verify(userService, times(1)).removeRoleFromUser(userId, roleId);
+    }
 }
