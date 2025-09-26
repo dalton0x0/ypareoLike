@@ -42,11 +42,9 @@ public class UserServiceImpl implements UserService {
         checkIfEmailExists(userRequestDto);
         checkIfUsernameExists(userRequestDto);
         checkPassword(userRequestDto);
+        checkRole(userRequestDto);
         User newUser = userMapper.convertDtoToEntity(userRequestDto);
-        if (userRequestDto.getRoleIds() != null && !userRequestDto.getRoleIds().isEmpty()) {
-            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
-            newUser.setRoles(roles);
-        }
+        setRoles(userRequestDto, newUser);
         User savedUser = userRepository.save(newUser);
         return userMapper.convertEntityToDto(savedUser);
     }
@@ -59,10 +57,7 @@ public class UserServiceImpl implements UserService {
         checkIfUsernameHasChanged(id, userRequestDto);
         checkIfPasswordHasChanged(id, userRequestDto);
         userMapper.updateEntityFromDto(existingUser, userRequestDto);
-        if (userRequestDto.getRoleIds() != null) {
-            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
-            existingUser.setRoles(roles);
-        }
+        updateRoles(userRequestDto, existingUser);
         User savedUser = userRepository.save(existingUser);
         return userMapper.convertEntityToDto(savedUser);
     }
@@ -173,6 +168,26 @@ public class UserServiceImpl implements UserService {
         }
         if (userRequestDto.getPassword() == null || oldPassword.equals(userRequestDto.getPassword()) || userRequestDto.getPassword().trim().isEmpty()) {
             existingUser.setPassword(oldPassword);
+        }
+    }
+
+    private void checkRole(UserRequestDto userRequestDto) {
+        if (userRequestDto.getRoleIds() == null || userRequestDto.getRoleIds().isEmpty()) {
+            throw new BadRequestException("At least one role is required");
+        }
+    }
+
+    private void setRoles(UserRequestDto userRequestDto, User newUser) {
+        if (userRequestDto.getRoleIds() != null && !userRequestDto.getRoleIds().isEmpty()) {
+            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
+            newUser.setRoles(roles);
+        }
+    }
+
+    private void updateRoles(UserRequestDto userRequestDto, User existingUser) {
+        if (userRequestDto.getRoleIds() != null) {
+            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
+            existingUser.setRoles(roles);
         }
     }
 }
