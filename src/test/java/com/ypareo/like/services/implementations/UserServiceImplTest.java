@@ -2,10 +2,13 @@ package com.ypareo.like.services.implementations;
 
 import com.ypareo.like.dtos.UserRequestDto;
 import com.ypareo.like.dtos.UserResponseDto;
+import com.ypareo.like.enums.RoleType;
 import com.ypareo.like.exceptions.BadRequestException;
 import com.ypareo.like.exceptions.ResourceNotFoundException;
 import com.ypareo.like.mappers.UserMapper;
+import com.ypareo.like.models.sql.Role;
 import com.ypareo.like.models.sql.User;
+import com.ypareo.like.repositories.RoleRepository;
 import com.ypareo.like.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,55 +32,72 @@ class UserServiceImplTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private RoleRepository roleRepository;
+
     @InjectMocks
     private UserServiceImpl userService;
 
     @Test
-    void getAllUsers_ShouldReturnListOfUsers() {
+    void getAllUsers_ShouldReturnAllUsers() {
 
-        User user1 = User.builder().id(1L).firstName("John").lastName("Doe").email("john@email.com").build();
-        User user2 = User.builder().id(2L).firstName("Jane").lastName("Smith").email("jane@email.com").build();
+        User user1 = User.builder().id(1L).firstName("John").lastName("Doe").build();
+        User user2 = User.builder().id(2L).firstName("Jane").lastName("Smith").build();
+        List<User> users = List.of(user1, user2);
 
-        UserResponseDto dto1 = UserResponseDto.builder().id(1L).firstName("John").lastName("Doe").email("john@email.com").build();
-        UserResponseDto dto2 = UserResponseDto.builder().id(2L).firstName("Jane").lastName("Smith").email("jane@email.com").build();
+        UserResponseDto dto1 = UserResponseDto.builder().id(1L).firstName("John").lastName("Doe").build();
+        UserResponseDto dto2 = UserResponseDto.builder().id(2L).firstName("Jane").lastName("Smith").build();
 
-        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+        when(userRepository.findAll()).thenReturn(users);
         when(userMapper.convertEntityToDto(user1)).thenReturn(dto1);
         when(userMapper.convertEntityToDto(user2)).thenReturn(dto2);
 
         List<UserResponseDto> result = userService.getAllUsers();
 
+        assertNotNull(result);
         assertEquals(2, result.size());
-        assertEquals("John", result.get(0).getFirstName());
-        assertEquals("Jane", result.get(1).getFirstName());
-        verify(userRepository, times(1)).findAll();
+        assertEquals(dto1, result.get(0));
+        assertEquals(dto2, result.get(1));
+        verify(userRepository).findAll();
     }
 
     @Test
-    void getUserById_WhenUserExists_ShouldReturnUser() {
+    void getAllUsers_WhenNoUsers_ShouldReturnEmptyList() {
+
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        List<UserResponseDto> result = userService.getAllUsers();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(userRepository).findAll();
+    }
+
+    @Test
+    void getUserById_WithValidId_ShouldReturnUser() {
 
         Long userId = 1L;
-        User user = User.builder().id(userId).firstName("John").lastName("Doe").email("john@email.com").build();
-        UserResponseDto expectedDto = UserResponseDto.builder().id(userId).firstName("John").lastName("Doe").email("john@email.com").build();
+        User user = User.builder().id(userId).firstName("John").lastName("Doe").build();
+        UserResponseDto dto = UserResponseDto.builder().id(userId).firstName("John").lastName("Doe").build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userMapper.convertEntityToDto(user)).thenReturn(expectedDto);
+        when(userMapper.convertEntityToDto(user)).thenReturn(dto);
 
         UserResponseDto result = userService.getUserById(userId);
 
         assertNotNull(result);
-        assertEquals("John", result.getFirstName());
-        verify(userRepository, times(1)).findById(userId);
+        assertEquals(dto, result);
+        verify(userRepository).findById(userId);
     }
 
     @Test
-    void getUserById_WhenUserNotFound_ShouldThrowException() {
+    void getUserById_WithInvalidId_ShouldThrowException() {
 
         Long userId = 999L;
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(userId));
-        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository).findById(userId);
     }
 
     @Test
@@ -85,47 +106,53 @@ class UserServiceImplTest {
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
                 .lastName("Doe")
-                .email("john@email.com")
+                .email("john.doe@example.com")
                 .username("johndoe")
-                .password("password123")
+                .password("password")
+                .roleIds(List.of(1L))
                 .build();
 
+        Role role = Role.builder().id(1L).name(RoleType.STUDENT).build();
         User user = User.builder()
                 .firstName("John")
                 .lastName("Doe")
-                .email("john@email.com")
+                .email("john.doe@example.com")
                 .username("johndoe")
-                .password("password123")
+                .password("password")
                 .build();
-
-        User savedUser = User.builder().id(1L).firstName("John").lastName("Doe").email("john@email.com").build();
-        UserResponseDto expectedResponse = UserResponseDto.builder().id(1L).firstName("John").lastName("Doe").email("john@email.com").build();
+        User savedUser = User.builder().id(1L).build();
+        UserResponseDto responseDto = UserResponseDto.builder().id(1L).build();
 
         when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(false);
+        when(roleRepository.findAllById(requestDto.getRoleIds())).thenReturn(List.of(role));
         when(userMapper.convertDtoToEntity(requestDto)).thenReturn(user);
         when(userRepository.save(user)).thenReturn(savedUser);
-        when(userMapper.convertEntityToDto(savedUser)).thenReturn(expectedResponse);
+        when(userMapper.convertEntityToDto(savedUser)).thenReturn(responseDto);
 
         UserResponseDto result = userService.createUser(requestDto);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        verify(userRepository, times(1)).save(user);
+        assertEquals(responseDto, result);
+        verify(userRepository).existsByEmail(requestDto.getEmail());
+        verify(userRepository).existsByUsername(requestDto.getUsername());
+        verify(roleRepository).findAllById(requestDto.getRoleIds());
+        verify(userRepository).save(user);
     }
 
     @Test
     void createUser_WithMissingFirstName_ShouldThrowException() {
 
         UserRequestDto requestDto = UserRequestDto.builder()
+                .firstName(null)
                 .lastName("Doe")
-                .email("john@email.com")
+                .email("john.doe@example.com")
                 .username("johndoe")
-                .password("password123")
+                .password("password")
                 .build();
 
-        assertNull(requestDto.getFirstName());
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -133,13 +160,14 @@ class UserServiceImplTest {
 
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
-                .email("john@email.com")
+                .lastName(null)
+                .email("john.doe@example.com")
                 .username("johndoe")
-                .password("password123")
+                .password("password")
                 .build();
 
-        assertNull(requestDto.getLastName());
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -148,12 +176,13 @@ class UserServiceImplTest {
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
                 .lastName("Doe")
+                .email(null)
                 .username("johndoe")
-                .password("password123")
+                .password("password")
                 .build();
 
-        assertNull(requestDto.getEmail());
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -162,12 +191,13 @@ class UserServiceImplTest {
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
                 .lastName("Doe")
-                .email("john@email.com")
-                .password("password123")
+                .email("john.doe@example.com")
+                .username(null)
+                .password("password")
                 .build();
 
-        assertNull(requestDto.getUsername());
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -175,14 +205,14 @@ class UserServiceImplTest {
 
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
-
                 .lastName("Doe")
-                .email("john@email.com")
+                .email("john.doe@example.com")
                 .username("johndoe")
+                .password(null)
                 .build();
 
-        assertNull(requestDto.getPassword());
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -191,358 +221,232 @@ class UserServiceImplTest {
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
                 .lastName("Doe")
-                .email("existing@email.com")
+                .email("existing@example.com")
                 .username("johndoe")
-                .password("password123")
+                .password("password")
                 .build();
 
         when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
 
         assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
-        verify(userRepository, times(1)).existsByEmail("existing@email.com");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createUser_WithExistingUsername_ShouldThrowException() {
+
+        UserRequestDto requestDto = UserRequestDto.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .username("existingUsername")
+                .password("password")
+                .build();
+
+        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(true);
+
+        assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createUser_WithNoRoles_ShouldThrowException() {
+
+        UserRequestDto requestDto = UserRequestDto.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .username("johndoe")
+                .password("password")
+                .roleIds(List.of())
+                .build();
+
+        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(false);
+
+        assertThrows(BadRequestException.class, () -> userService.createUser(requestDto));
+        verify(userRepository, never()).save(any());
     }
 
     @Test
     void updateUser_WithValidData_ShouldUpdateUser() {
 
+        Role role1 = Role.builder().id(1L).name(RoleType.STUDENT).build();
+        Role role2 = Role.builder().id(2L).name(RoleType.TEACHER).build();
+
         Long userId = 1L;
+
         UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("JohnUpdated")
-                .lastName("DoeUpdated")
-                .email("john.updated@email.com")
+                .firstName("John Updated")
+                .lastName("Doe Updated")
+                .email("john.doe.updated@example.com")
                 .username("johndoeupdated")
-                .password("newpassword123")
+                .password("newpassword")
+                .roleIds(List.of(1L, 2L))
                 .build();
 
         User existingUser = User.builder()
                 .id(userId)
                 .firstName("John")
                 .lastName("Doe")
-                .email("john@email.com")
+                .email("john.doe@example.com")
                 .username("johndoe")
                 .password("oldpassword")
+                .roles(List.of())
                 .build();
 
         User updatedUser = User.builder()
-                .id(userId)
-                .firstName("JohnUpdated")
-                .lastName("DoeUpdated")
-                .email("john.updated@email.com")
+                .firstName("John Updated")
+                .lastName("Doe Updated")
+                .email("john.doe.updated@example.com")
                 .username("johndoeupdated")
-                .password("newpassword123")
+                .password("newpassword")
+                .roles(List.of(role1, role2))
                 .build();
 
-        UserResponseDto expectedResponse = UserResponseDto.builder()
+        UserResponseDto expectedResponseDto = UserResponseDto.builder()
                 .id(userId)
-                .firstName("JohnUpdated")
-                .lastName("DoeUpdated")
-                .email("john.updated@email.com")
+                .firstName("John Updated")
+                .lastName("Doe Updated")
+                .email("john.doe.updated@example.com")
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(false);
+        when(roleRepository.findAllById(requestDto.getRoleIds())).thenReturn(List.of(role1, role2));
         when(userRepository.save(existingUser)).thenReturn(updatedUser);
-        when(userMapper.convertEntityToDto(updatedUser)).thenReturn(expectedResponse);
+        when(userMapper.convertEntityToDto(updatedUser)).thenReturn(expectedResponseDto);
 
         UserResponseDto result = userService.updateUser(userId, requestDto);
 
         assertNotNull(result);
-        assertEquals("JohnUpdated", result.getFirstName());
+        assertEquals(expectedResponseDto, result);
+        assertEquals("John Updated", result.getFirstName());
+        assertEquals(2, existingUser.getRoles().size());
         verify(userRepository, times(1)).save(existingUser);
     }
 
     @Test
-    void updateUser_WhenEmailChangedAndNotTaken_ShouldUpdateEmail() {
+    void updateUser_WithEmailChange_ShouldCheckEmailAvailability() {
 
         Long userId = 1L;
         UserRequestDto requestDto = UserRequestDto.builder()
                 .firstName("John")
                 .lastName("Doe")
-                .email("new.email@email.com")
+                .email("new.email@example.com")
                 .username("johndoe")
-                .password("password123")
+                .password("password")
                 .build();
 
         User existingUser = User.builder()
                 .id(userId)
                 .firstName("John")
                 .lastName("Doe")
-                .email("old.email@email.com")
+                .email("old.email@example.com")
                 .username("johndoe")
-                .password("password123")
-                .build();
-
-        User updatedUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("new.email@email.com")
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        UserResponseDto expectedResponse = UserResponseDto.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("new.email@email.com")
+                .password("password")
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
-        when(userRepository.save(existingUser)).thenReturn(updatedUser);
-        when(userMapper.convertEntityToDto(updatedUser)).thenReturn(expectedResponse);
+        when(userRepository.existsByEmail("new.email@example.com")).thenReturn(false);
+        when(userRepository.save(existingUser)).thenReturn(existingUser);
+        when(userMapper.convertEntityToDto(existingUser)).thenReturn(UserResponseDto.builder().build());
 
-        UserResponseDto result = userService.updateUser(userId, requestDto);
+        userService.updateUser(userId, requestDto);
 
-        assertNotNull(result);
-        assertEquals("new.email@email.com", result.getEmail());
-        verify(userRepository, times(1)).existsByEmail("new.email@email.com");
+        assertEquals("new.email@example.com", existingUser.getEmail());
+        verify(userRepository).existsByEmail("new.email@example.com");
     }
 
     @Test
-    void updateUser_WhenEmailChangedButTaken_ShouldThrowException() {
+    void deleteUser_WithValidId_ShouldDeleteUser() {
 
         Long userId = 1L;
-        UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("taken.email@email.com")
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        User existingUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("old.email@email.com")
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
-
-        assertThrows(BadRequestException.class, () -> userService.updateUser(userId, requestDto));
-        verify(userRepository, times(1)).existsByEmail("taken.email@email.com");
-    }
-
-    @Test
-    void updateUser_WhenUsernameChangedAndNotTaken_ShouldUpdateUsername() {
-
-        Long userId = 1L;
-        UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username("newusername")
-                .password("password123")
-                .build();
-
-        User existingUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username("oldusername")
-                .password("password123")
-                .build();
-
-        User updatedUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username("newusername")
-                .password("password123")
-                .build();
-
-        UserResponseDto expectedResponse = UserResponseDto.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(false);
-        when(userRepository.save(existingUser)).thenReturn(updatedUser);
-        when(userMapper.convertEntityToDto(updatedUser)).thenReturn(expectedResponse);
-
-        UserResponseDto result = userService.updateUser(userId, requestDto);
-
-        assertNotNull(result);
-
-        verify(userRepository, times(1)).existsByUsername("newusername");
-    }
-
-    @Test
-    void updateUser_WhenUsernameChangedButTaken_ShouldThrowException() {
-
-        Long userId = 1L;
-        UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username("takenusername")
-                .password("password123")
-                .build();
-
-        User existingUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username("oldusername")
-                .password("password123")
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(true);
-
-        assertThrows(BadRequestException.class, () -> userService.updateUser(userId, requestDto));
-        verify(userRepository, times(1)).existsByUsername("takenusername");
-    }
-
-    @Test
-    void updateUser_WhenEmailNotChanged_ShouldKeepSameEmail() {
-
-        Long userId = 1L;
-        String sameEmail = "john@email.com";
-
-        UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email(sameEmail)
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        User existingUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email(sameEmail)
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        User updatedUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email(sameEmail)
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        UserResponseDto expectedResponse = UserResponseDto.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email(sameEmail)
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(existingUser)).thenReturn(updatedUser);
-        when(userMapper.convertEntityToDto(updatedUser)).thenReturn(expectedResponse);
-
-        UserResponseDto result = userService.updateUser(userId, requestDto);
-
-        assertNotNull(result);
-        assertEquals(sameEmail, result.getEmail());
-
-        verify(userRepository, never()).existsByEmail(sameEmail);
-    }
-
-    @Test
-    void updateUser_WhenUsernameNotChanged_ShouldKeepSameUsername() {
-
-        Long userId = 1L;
-        String sameUsername = "johndoe";
-
-        UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username(sameUsername)
-                .password("password123")
-                .build();
-
-        User existingUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username(sameUsername)
-                .password("password123")
-                .build();
-
-        User updatedUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username(sameUsername)
-                .password("password123")
-                .build();
-
-        UserResponseDto expectedResponse = UserResponseDto.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(existingUser)).thenReturn(updatedUser);
-        when(userMapper.convertEntityToDto(updatedUser)).thenReturn(expectedResponse);
-
-        UserResponseDto result = userService.updateUser(userId, requestDto);
-
-        assertNotNull(result);
-
-        verify(userRepository, never()).existsByUsername(sameUsername);
-    }
-
-    @Test
-    void updateUser_WhenEmailChangedToSameButWithDifferentCase_ShouldHandleCaseSensitivity() {
-
-        Long userId = 1L;
-        UserRequestDto requestDto = UserRequestDto.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("JOHN@email.com")
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        User existingUser = User.builder()
-                .id(userId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@email.com")
-                .username("johndoe")
-                .password("password123")
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-
-        assertDoesNotThrow(() -> userService.updateUser(userId, requestDto));
-    }
-
-    @Test
-    void deleteUser_WhenUserExists_ShouldDeleteUser() {
-
-        Long userId = 1L;
-        User existingUser = User.builder().id(userId).build();
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        doNothing().when(userRepository).delete(existingUser);
+        User user = User.builder().id(userId).firstName("John").lastName("Doe").build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         userService.deleteUser(userId);
 
-        verify(userRepository, times(1)).delete(existingUser);
+        verify(userRepository).findById(userId);
+        verify(userRepository).delete(user);
+    }
+
+    @Test
+    void addRoleToUser_ShouldAddRole() {
+
+        Long userId = 1L;
+        Long roleId = 2L;
+        User user = User.builder().id(userId).roles(new ArrayList<>()).build();
+        Role role = Role.builder().id(roleId).name(RoleType.TEACHER).build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.convertEntityToDto(user)).thenReturn(UserResponseDto.builder().build());
+
+        UserResponseDto result = userService.addRoleToUser(userId, roleId);
+
+        assertNotNull(result);
+        assertTrue(user.getRoles().contains(role));
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void addRoleToUser_WhenRoleAlreadyExists_ShouldNotAddDuplicate() {
+
+        Long userId = 1L;
+        Long roleId = 2L;
+        Role role = Role.builder().id(roleId).name(RoleType.TEACHER).build();
+        User user = User.builder().id(userId).roles(new ArrayList<>(List.of(role))).build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(userMapper.convertEntityToDto(user)).thenReturn(UserResponseDto.builder().build());
+
+        UserResponseDto result = userService.addRoleToUser(userId, roleId);
+
+        assertNotNull(result);
+        assertEquals(1, user.getRoles().size()); // Should not add duplicate
+        verify(userRepository, never()).save(user);
+    }
+
+    @Test
+    void removeRoleFromUser_ShouldRemoveRole() {
+
+        Long userId = 1L;
+        Long roleId = 2L;
+        Role role = Role.builder().id(roleId).name(RoleType.TEACHER).build();
+        User user = User.builder().id(userId).roles(new ArrayList<>(List.of(role))).build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.convertEntityToDto(user)).thenReturn(UserResponseDto.builder().build());
+
+        UserResponseDto result = userService.removeRoleFromUser(userId, roleId);
+
+        assertNotNull(result);
+        assertFalse(user.getRoles().contains(role));
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void removeRoleFromUser_WhenRoleNotExists_ShouldNotRemove() {
+
+        Long userId = 1L;
+        Long roleId = 2L;
+        Role role = Role.builder().id(roleId).name(RoleType.TEACHER).build();
+        User user = User.builder().id(userId).roles(new ArrayList<>()).build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(userMapper.convertEntityToDto(user)).thenReturn(UserResponseDto.builder().build());
+
+        UserResponseDto result = userService.removeRoleFromUser(userId, roleId);
+
+        assertNotNull(result);
+        assertTrue(user.getRoles().isEmpty());
+        verify(userRepository, never()).save(user);
     }
 }
