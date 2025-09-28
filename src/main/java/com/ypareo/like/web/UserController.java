@@ -42,4 +42,14 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{userId}/roles/{roleId}")
+    public ResponseEntity<UserResponseDto> addRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
+        return ResponseEntity.ok(userService.addRoleToUser(userId, roleId));
+    }
+
+    @DeleteMapping("/{userId}/roles/{roleId}")
+    public ResponseEntity<UserResponseDto> removeRoleFromUser(@PathVariable Long userId, @PathVariable Long roleId) {
+        return ResponseEntity.ok(userService.removeRoleFromUser(userId, roleId));
+    }
 }

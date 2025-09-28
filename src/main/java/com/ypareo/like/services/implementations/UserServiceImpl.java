@@ -5,7 +5,9 @@ import com.ypareo.like.dtos.UserResponseDto;
 import com.ypareo.like.exceptions.BadRequestException;
 import com.ypareo.like.exceptions.ResourceNotFoundException;
 import com.ypareo.like.mappers.UserMapper;
+import com.ypareo.like.models.sql.Role;
 import com.ypareo.like.models.sql.User;
+import com.ypareo.like.repositories.RoleRepository;
 import com.ypareo.like.repositories.UserRepository;
 import com.ypareo.like.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final RoleRepository roleRepository;
 
     @Override
     public List<UserResponseDto> getAllUsers() {
@@ -39,7 +42,9 @@ public class UserServiceImpl implements UserService {
         checkIfEmailExists(userRequestDto);
         checkIfUsernameExists(userRequestDto);
         checkPassword(userRequestDto);
+        checkRole(userRequestDto);
         User newUser = userMapper.convertDtoToEntity(userRequestDto);
+        setRoles(userRequestDto, newUser);
         User savedUser = userRepository.save(newUser);
         return userMapper.convertEntityToDto(savedUser);
     }
@@ -52,6 +57,7 @@ public class UserServiceImpl implements UserService {
         checkIfUsernameHasChanged(id, userRequestDto);
         checkIfPasswordHasChanged(id, userRequestDto);
         userMapper.updateEntityFromDto(existingUser, userRequestDto);
+        updateRoles(userRequestDto, existingUser);
         User savedUser = userRepository.save(existingUser);
         return userMapper.convertEntityToDto(savedUser);
     }
@@ -62,9 +68,37 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(existingUser);
     }
 
+    @Override
+    public UserResponseDto addRoleToUser(Long userId, Long roleId) {
+        User user = getExistingUser(userId);
+        Role role = getExistingRole(roleId);
+        if (!user.getRoles().contains(role)) {
+            user.getRoles().add(role);
+            userRepository.save(user);
+        }
+        return userMapper.convertEntityToDto(user);
+    }
+
+    @Override
+    public UserResponseDto removeRoleFromUser(Long userId, Long roleId) {
+        User user = getExistingUser(userId);
+        Role role = getExistingRole(roleId);
+        if (user.getRoles().contains(role)) {
+            user.getRoles().remove(role);
+            userRepository.save(user);
+        }
+        return userMapper.convertEntityToDto(user);
+    }
+
     private User getExistingUser(Long id) {
         return userRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("User with id " + id + " not found")
+                () -> new ResourceNotFoundException("User " + id + " not found")
+        );
+    }
+
+    private Role getExistingRole(Long roleId) {
+        return roleRepository.findById(roleId).orElseThrow(
+                () -> new ResourceNotFoundException("Role " + roleId + " not found")
         );
     }
 
@@ -84,15 +118,23 @@ public class UserServiceImpl implements UserService {
     }
 
     private void checkIfEmailExists(UserRequestDto userRequestDto) {
-        if (userRepository.existsByEmail(userRequestDto.getEmail())) {
-            throw new BadRequestException("Email " + userRequestDto.getEmail() + " already exists");
+        if (emailExists(userRequestDto.getEmail())) {
+            throw new BadRequestException("Email " + userRequestDto.getEmail() + " is not available");
         }
     }
 
     private void checkIfUsernameExists(UserRequestDto userRequestDto) {
-        if (userRepository.existsByUsername(userRequestDto.getUsername())) {
-            throw new BadRequestException("Username " + userRequestDto.getUsername() + " already exists");
+        if (usernameExists(userRequestDto.getUsername())) {
+            throw new BadRequestException("Username " + userRequestDto.getUsername() + " is not available");
         }
+    }
+
+    private boolean emailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    private boolean usernameExists(String username) {
+        return userRepository.existsByUsername(username);
     }
 
     private void checkPassword(UserRequestDto userRequestDto) {
@@ -121,13 +163,31 @@ public class UserServiceImpl implements UserService {
         User existingUser = getExistingUser(userId);
         String oldPassword = existingUser.getPassword();
 
-        if (userRequestDto.getPassword() != null && !oldPassword.equals(userRequestDto.getPassword())) {
-            if (!userRequestDto.getPassword().trim().isEmpty()) {
-                existingUser.setPassword(userRequestDto.getPassword());
-            }
+        if (userRequestDto.getPassword() != null && !oldPassword.equals(userRequestDto.getPassword()) && !userRequestDto.getPassword().trim().isEmpty()) {
+            existingUser.setPassword(userRequestDto.getPassword());
         }
         if (userRequestDto.getPassword() == null || oldPassword.equals(userRequestDto.getPassword()) || userRequestDto.getPassword().trim().isEmpty()) {
             existingUser.setPassword(oldPassword);
+        }
+    }
+
+    private void checkRole(UserRequestDto userRequestDto) {
+        if (userRequestDto.getRoleIds() == null || userRequestDto.getRoleIds().isEmpty()) {
+            throw new BadRequestException("At least one role is required");
+        }
+    }
+
+    private void setRoles(UserRequestDto userRequestDto, User newUser) {
+        if (userRequestDto.getRoleIds() != null && !userRequestDto.getRoleIds().isEmpty()) {
+            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
+            newUser.setRoles(roles);
+        }
+    }
+
+    private void updateRoles(UserRequestDto userRequestDto, User existingUser) {
+        if (userRequestDto.getRoleIds() != null) {
+            List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
+            existingUser.setRoles(roles);
         }
     }
 }
