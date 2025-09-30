@@ -4,6 +4,6 @@ import com.ypareo.like.dtos.LoginRequestDto;
 import com.ypareo.like.dtos.LoginResponseDto;
 import org.springframework.http.ResponseEntity;
 
-public interface AuthService {
+public interface AuthenticationService {
     ResponseEntity<LoginResponseDto> login(LoginRequestDto loginRequestDto);
 }
