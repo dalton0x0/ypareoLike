@@ -70,6 +70,7 @@ jobs:
           echo "SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> $GITHUB_ENV
           echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> $GITHUB_ENV
           echo "DOCKER_REPO=${{ secrets.DOCKER_REPO }}" >> $GITHUB_ENV
+          echo "JWT_TOKEN: ${{ secrets.JWT_TOKEN }}" >> $GITHUB_ENV
 
   docker-build-and-push:
     name: Docker Build & Push
@@ -111,6 +112,7 @@ jobs:
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> $GITHUB_ENV
           echo "SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> $GITHUB_ENV
           echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> $GITHUB_ENV
+          echo "JWT_TOKEN: ${{ secrets.JWT_TOKEN }}" >> $GITHUB_ENV
 
       - name: Start services with Docker Compose
         run: docker compose -f docker-compose.yml up -d
@@ -118,6 +120,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
           SPRING_DATASOURCE_USERNAME: ${{ env.SPRING_DATASOURCE_USERNAME }}
           SPRING_DATASOURCE_PASSWORD: ${{ env.SPRING_DATASOURCE_PASSWORD }}
+          JWT_TOKEN: ${{ env.JWT_TOKEN }}
 
       - name: Shutdown Docker Compose (cleanup)
         if: always()
