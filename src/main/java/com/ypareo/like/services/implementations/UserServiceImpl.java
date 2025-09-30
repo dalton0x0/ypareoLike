@@ -10,14 +10,19 @@ import com.ypareo.like.models.sql.User;
 import com.ypareo.like.repositories.RoleRepository;
 import com.ypareo.like.repositories.UserRepository;
 import com.ypareo.like.services.UserService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -189,5 +194,12 @@ public class UserServiceImpl implements UserService {
             List<Role> roles = roleRepository.findAllById(userRequestDto.getRoleIds());
             existingUser.setRoles(roles);
         }
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username).orElseThrow(
+                () -> new UsernameNotFoundException("This user does not exists")
+        );
     }
 }
