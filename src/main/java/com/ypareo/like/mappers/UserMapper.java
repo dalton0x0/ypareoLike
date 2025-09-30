@@ -3,6 +3,7 @@ package com.ypareo.like.mappers;
 import com.ypareo.like.dtos.UserRequestDto;
 import com.ypareo.like.dtos.UserResponseDto;
 import com.ypareo.like.models.sql.User;
+import com.ypareo.like.secutiry.CustomPasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     private final RoleMapper roleMapper;
+    private final CustomPasswordEncoder customPasswordEncoder;
 
     public User convertDtoToEntity(UserRequestDto userRequestDto) {
         return User.builder()
@@ -19,7 +21,7 @@ public class UserMapper {
                 .lastName(userRequestDto.getLastName())
                 .email(userRequestDto.getEmail())
                 .username(userRequestDto.getUsername())
-                .password(userRequestDto.getPassword())
+                .password(customPasswordEncoder.encode(userRequestDto.getPassword()))
                 .build();
     }
 
