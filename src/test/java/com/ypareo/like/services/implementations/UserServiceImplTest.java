@@ -10,6 +10,7 @@ import com.ypareo.like.models.sql.Role;
 import com.ypareo.like.models.sql.User;
 import com.ypareo.like.repositories.RoleRepository;
 import com.ypareo.like.repositories.UserRepository;
+import com.ypareo.like.secutiry.CustomPasswordEncoder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +35,9 @@ class UserServiceImplTest {
 
     @Mock
     private RoleRepository roleRepository;
+
+    @Mock
+    private CustomPasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -118,7 +122,7 @@ class UserServiceImplTest {
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .username("johndoe")
-                .password("password")
+                .password(passwordEncoder.encode(requestDto.getPassword()))
                 .build();
         User savedUser = User.builder().id(1L).build();
         UserResponseDto responseDto = UserResponseDto.builder().id(1L).build();
