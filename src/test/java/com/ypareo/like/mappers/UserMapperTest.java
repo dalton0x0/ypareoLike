@@ -6,6 +6,7 @@ import com.ypareo.like.dtos.UserResponseDto;
 import com.ypareo.like.enums.RoleType;
 import com.ypareo.like.models.sql.Role;
 import com.ypareo.like.models.sql.User;
+import com.ypareo.like.secutiry.CustomPasswordEncoder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +25,9 @@ class UserMapperTest {
     @Mock
     private RoleMapper roleMapper;
 
+    @Mock
+    private CustomPasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserMapper userMapper;
 
@@ -36,7 +40,7 @@ class UserMapperTest {
                 .lastName("lastName")
                 .email("email")
                 .username("username")
-                .password("password")
+                .password(passwordEncoder.encode("password"))
                 .build();
 
         User user = userMapper.convertDtoToEntity(userRequestDto);
@@ -47,7 +51,7 @@ class UserMapperTest {
         assertEquals("lastName", user.getLastName());
         assertEquals("email", user.getEmail());
         assertEquals("username", user.getUsername());
-        assertEquals("password", user.getPassword());
+        assertEquals(passwordEncoder.encode("password"), user.getPassword());
     }
 
     @Test
